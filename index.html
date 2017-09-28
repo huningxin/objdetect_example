@@ -2,15 +2,12 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>OpenCV.js objdetect example</title>
+<title>OpenCV.js Haar Detection Example</title>
 <link href="style.css" rel="stylesheet" type="text/css" />
 </head>
 <body>
-<h2>OpenCV.js objdetect example</h2>
-<p>
-    Click <b>Start/Stop</b> button to start or stop the camera capture.<br>
-    The <b>videoInput</b> is a &lt;video&gt; element used as face detector input.
-    The <b>canvasOutput</b> is a &lt;canvas&gt; element used as face detector output.<br>
+<h2>OpenCV.js Haar Detection Example</h2>
+<p id="status">
 </p>
 <div>
 <div class="control"><button id="startAndStop" disabled>Start</button></div>
@@ -81,7 +78,7 @@ function onVideoStopped() {
     startAndStop.innerText = 'Start';
 }
 
-var xml;
+let classifier;
 
 function startProcessing() {
     let video = document.getElementById('videoInput');
@@ -92,10 +89,6 @@ function startProcessing() {
     let gray = new Uint8Array(video.width * video.height);
     let ctx = canvas.getContext('2d');
     let faces = new cv.RectVector();
-    let classifier = new cv.CascadeClassifier();
-
-    // load pre-trained classifiers
-    classifier.load(xml);
 
     const FPS = 30;
     function processVideo() {
@@ -144,9 +137,18 @@ function drawResults(ctx, results, color, size) {
 }
 
 utils.loadOpenCv(() => {
-    utils.loadFileFromUrl('./haarcascade_frontalface_default.xml', (respnose) => {
-        xml = respnose;
-        startAndStop.removeAttribute('disabled');
+    const cascadeFileUrl = './haarcascade_frontalface_default.xml';
+    utils.loadFileFromUrl(cascadeFileUrl, (xml) => {
+        try {
+            classifier = new cv.CascadeClassifier();
+            // load pre-trained classifiers
+            classifier.load(xml);
+            document.getElementById('status').innerText =
+                'Succeed to load haar cascade file ' + cascadeFileUrl;
+            startAndStop.removeAttribute('disabled');
+        } catch (err) {
+            utils.printError(err);
+        }
     });
 });
 </script>
