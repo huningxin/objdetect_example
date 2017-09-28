@@ -8,7 +8,7 @@ function Utils(errorOutputId) { // eslint-disable-line no-unused-vars
         script.setAttribute('async', '');
         script.setAttribute('type', 'text/javascript');
         script.addEventListener('load', () => {
-            console.log(cv.getBuildInformation());
+            //console.log(cv.getBuildInformation());
             onloadCallback();
         });
         script.addEventListener('error', () => {
@@ -19,16 +19,13 @@ function Utils(errorOutputId) { // eslint-disable-line no-unused-vars
         node.parentNode.insertBefore(script, node);
     };
 
-    this.createFileFromUrl = function(path, url, callback) {
+    this.loadFileFromUrl = function(url, callback) {
         let request = new XMLHttpRequest();
         request.open('GET', url, true);
-        request.responseType = 'arraybuffer';
         request.onload = function(ev) {
             if (request.readyState === 4) {
                 if (request.status === 200) {
-                    let data = new Uint8Array(request.response);
-                    cv.FS_createDataFile('/', path, data, true, false, false);
-                    callback();
+                    callback(request.response);
                 } else {
                     self.printError('Failed to load ' + url + ' status: ' + request.status);
                 }
@@ -65,19 +62,24 @@ function Utils(errorOutputId) { // eslint-disable-line no-unused-vars
     };
 
     this.printError = function(err) {
+        function whatEmscriptenException(ptr) {
+            // 8 should be the vtable offset for the what function
+            var fPtr = Module.HEAPU32[(Module.HEAPU32[(ptr) >> 2] + 8) >> 2];
+            return Module.AsciiToString(Module.dynCall_ii(fPtr, ptr));
+        }
         if (typeof err === 'undefined') {
             err = '';
         } else if (typeof err === 'number') {
             if (!isNaN(err)) {
                 if (typeof cv !== 'undefined') {
-                    err = 'Exception: ' + cv.exceptionFromPtr(err).msg;
+                    err = 'Exception: ' + whatEmscriptenException(err);
                 }
             }
         } else if (typeof err === 'string') {
             let ptr = Number(err.split(' ')[0]);
             if (!isNaN(ptr)) {
                 if (typeof cv !== 'undefined') {
-                    err = 'Exception: ' + cv.exceptionFromPtr(ptr).msg;
+                    err = 'Exception: ' + whatEmscriptenException(ptr);
                 }
             }
         } else if (err instanceof Error) {
